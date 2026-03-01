@@ -251,6 +251,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var planeAnimator: android.animation.AnimatorSet? = null
+
+    // Добавьте этот метод в класс MainActivity
+    private fun startPlaneAnimation() {
+        if (planeAnimator != null) return // Уже запущена
+
+        val plane = binding.ivPlane
+
+        // Анимация покачивания вверх-вниз (Y)
+        val translationY = android.animation.ObjectAnimator.ofFloat(plane, "translationY", 0f, -10f, 0f).apply {
+            duration = 2000
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+        }
+
+        // Анимация небольшого наклона (Rotation) - "петляние" носом
+        val rotation = android.animation.ObjectAnimator.ofFloat(plane, "rotation", 0f, -15f, 0f).apply {
+            duration = 1800 // Чуть быстрее, чтобы рассинхронизировать с Y
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = android.view.animation.LinearInterpolator()
+        }
+
+        planeAnimator = android.animation.AnimatorSet().apply {
+            playTogether(translationY, rotation)
+            start()
+        }
+    }
+
+    private fun stopPlaneAnimation() {
+        planeAnimator?.cancel()
+        planeAnimator = null
+        binding.ivPlane.rotation = 0f
+        binding.ivPlane.translationY = 0f
+    }
+
     private fun observeManager() {
         lifecycleScope.launch {
             ProxyManager.stateFlow.collect { state ->
@@ -260,18 +295,21 @@ class MainActivity : AppCompatActivity() {
                         binding.btnPause.isEnabled = false
                         binding.btnStop.isEnabled = false
                         binding.btnPause.setIconResource(R.drawable.ic_pause)
+                        stopPlaneAnimation() // Останавливаем самолет
                     }
                     CheckerState.RUNNING -> {
                         binding.btnStart.isEnabled = false
                         binding.btnPause.isEnabled = true
                         binding.btnStop.isEnabled = true
                         binding.btnPause.setIconResource(R.drawable.ic_pause)
+                        startPlaneAnimation() // Запускаем полет
                     }
                     CheckerState.PAUSED -> {
                         binding.btnStart.isEnabled = false
                         binding.btnPause.isEnabled = true
                         binding.btnStop.isEnabled = true
                         binding.btnPause.setIconResource(R.drawable.ic_play)
+                        // Можно не останавливать анимацию, пусть "парит" на месте
                     }
                 }
             }
@@ -279,9 +317,21 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             ProxyManager.progressFlow.collect { (current, total) ->
-                binding.progressBar.max = total
-                binding.progressBar.progress = current
+                // Обновляем текст
                 binding.tvProgress.text = "Готово: $current / $total"
+
+                // Двигаем самолетик и линию
+                if (total > 0) {
+                    val percent = current.toFloat() / total.toFloat()
+                    val params = binding.progressGuideline.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                    params.guidePercent = percent
+                    binding.progressGuideline.layoutParams = params
+                } else {
+                    // Сброс в начало
+                    val params = binding.progressGuideline.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                    params.guidePercent = 0f
+                    binding.progressGuideline.layoutParams = params
+                }
             }
         }
 
@@ -289,6 +339,10 @@ class MainActivity : AppCompatActivity() {
             ProxyManager.listUpdateFlow.collect {
                 adapter.notifyDataSetChanged()
                 binding.etInput.setText("")
+                // Сброс прогресса при загрузке нового списка
+                val params = binding.progressGuideline.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                params.guidePercent = 0f
+                binding.progressGuideline.layoutParams = params
             }
         }
 
@@ -301,6 +355,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             ProxyManager.finishedFlow.collect {
                 Toast.makeText(this@MainActivity, "Проверка завершена/остановлена", Toast.LENGTH_SHORT).show()
+                stopPlaneAnimation()
             }
         }
     }

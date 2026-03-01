@@ -172,13 +172,59 @@
     </LinearLayout>
 
     <!-- 6. Прогресс -->
-    <com.google.android.material.progressindicator.LinearProgressIndicator
-        android:id="@+id/progressBar"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutProgress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:trackCornerRadius="4dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutControls" />
+        android:layout_marginTop="24dp"
+        android:paddingHorizontal="4dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutControls">
+
+        <!-- Направляющая, которая двигается от 0 до 1 -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/progressGuideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.0" />
+
+        <!-- Серый фон полоски -->
+        <View
+            android:id="@+id/viewTrack"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:background="#E0E0E0"
+            android:backgroundTint="?attr/colorSurfaceVariant"
+            app:layout_constraintBottom_toBottomOf="@id/ivPlane"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/ivPlane" />
+
+        <!-- Заполненная часть (Синяя) -->
+        <View
+            android:id="@+id/viewProgressFill"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:background="?attr/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="@id/viewTrack"
+            app:layout_constraintEnd_toStartOf="@id/progressGuideline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/viewTrack" />
+
+        <!-- Самолетик (привязан к Guideline) -->
+        <ImageView
+            android:id="@+id/ivPlane"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_plane"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@id/progressGuideline"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:translationX="-16dp"/>
+        <!-- translationX смещает центр самолета на конец линии -->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
         android:id="@+id/tvProgress"
@@ -188,7 +234,7 @@
         android:textAlignment="center"
         android:textStyle="bold"
         android:layout_marginTop="4dp"
-        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+        app:layout_constraintTop_toBottomOf="@id/layoutProgress" />
 
     <!-- 7. Шапка таблицы -->
     <com.google.android.material.card.MaterialCardView
